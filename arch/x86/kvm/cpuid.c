@@ -1074,10 +1074,10 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 		printk("branch 1");
 		if(function == 0x4FFFFFFF) {
 			printk("i got inside 0x4fffffff block");
-			*eax = 100;
-			*ebx = 200;
-			*ecx = 300;
-			*edx = 400;
+			*eax = atomic_read(&exits);
+			unsigned long cycles_buffer = atomic_long_read(&cycles);
+			*ebx = (u32)(0xFFFFFFFFLL & cycles_buffer) ;//low 32-bit
+			*ecx = (u32)((0xFFFFFFFF00000000LL & cycles_buffer >> 32); // high 32-bit
 			return exact;
 		}
 
