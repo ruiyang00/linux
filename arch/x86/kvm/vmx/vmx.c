@@ -63,6 +63,20 @@
 #include "vmx.h"
 #include "x86.h"
 
+
+
+
+/******below segment is only used for cmpe283 purpose************/
+//start
+
+atomic_t exits = ATOMIC_INIT(0);
+atomic_long_t cycles = ATOMIC_INIT(0);
+
+EXPORT_SYMBOL(exits);
+EXPORT_SYMBOL(cycles);
+
+/******************************end*****************/
+
 MODULE_AUTHOR("Qumranet");
 MODULE_LICENSE("GPL");
 
@@ -5922,6 +5936,26 @@ void dump_vmcs(void)
 		       vmcs_read16(VIRTUAL_PROCESSOR_ID));
 }
 
+
+
+/* get current cpu time-stamp 
+*  refernece:
+*	1.https://stackoverflow.com/questions/42436059/using-time-stamp-counter-to-get-the-time-stamp
+*	2. https://docs.microsoft.com/en-us/cpp/intrinsics/rdtsc?view=msvc-160
+*
+*
+*/
+
+
+static unsigned long long rdtsc_cmpe283(void)
+{
+	unsigned hi, lo;
+  	__asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+  	return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
+
+}
+
+
 /*
  * The guest has exited.  See if we can fix it or if we need userspace
  * assistance.
@@ -5931,6 +5965,11 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
 	u32 exit_reason = vmx->exit_reason;
 	u32 vectoring_info = vmx->idt_vectoring_info;
+	unsigned long long cycle_start, cycle_end;
+	int ret_buffer = 0;
+	cycle_start = rdtsc_cmpe283();
+	atomic_add(1 ,&exits);
+	
 
 	/*
 	 * Flush logged GPAs PML buffer, this will make dirty_bitmap more
@@ -6063,7 +6102,13 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	if (!kvm_vmx_exit_handlers[exit_reason])
 		goto unexpected_vmexit;
 
-	return kvm_vmx_exit_handlers[exit_reason](vcpu);
+
+
+	cycle_end = rdtsc_cmpe283();
+	ret_buffer = kvm_vmx_exit_handlers[exit_reason](vcpu);
+	
+	atomic64_fetch_add((cycle_end - cycle_start), &cycles);
+	return ret_buffer;
 
 unexpected_vmexit:
 	vcpu_unimpl(vcpu, "vmx: unexpected exit reason 0x%x\n", exit_reason);

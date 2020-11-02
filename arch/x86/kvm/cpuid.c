@@ -24,6 +24,15 @@
 #include "trace.h"
 #include "pmu.h"
 
+
+
+
+//importing from vmx.c file and write them to eax and eca
+extern atomic_t exits;
+extern atomic_long_t cycles;
+
+
+
 /*
  * Unlike "struct cpuinfo_x86.x86_capability", kvm_cpu_caps doesn't need to be
  * aligned to sizeof(unsigned long) because it's not accessed via bitops.
@@ -1057,15 +1066,28 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 	struct kvm_cpuid_entry2 *entry;
 	bool exact, used_max_basic = false;
 
+	printk("inside kvm_cpuid() and function value is %x", function);
 	entry = kvm_find_cpuid_entry(vcpu, function, index);
 	exact = !!entry;
 
 	if (!entry && !exact_only) {
+		printk("branch 1");
+		if(function == 0x4FFFFFFF) {
+			printk("i got inside 0x4fffffff block");
+			*eax = 100;
+			*ebx = 200;
+			*ecx = 300;
+			*edx = 400;
+			return exact;
+		}
+
 		entry = get_out_of_range_cpuid_entry(vcpu, &function, index);
 		used_max_basic = !!entry;
 	}
 
 	if (entry) {
+		
+		printk("branch 2");
 		*eax = entry->eax;
 		*ebx = entry->ebx;
 		*ecx = entry->ecx;
@@ -1077,6 +1099,9 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 				*ebx &= ~(F(RTM) | F(HLE));
 		}
 	} else {
+		
+		
+		printk("branch 3");
 		*eax = *ebx = *ecx = *edx = 0;
 		/*
 		 * When leaf 0BH or 1FH is defined, CL is pass-through
