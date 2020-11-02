@@ -1064,6 +1064,7 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 {
 	u32 orig_function = *eax, function = *eax, index = *ecx;
 	struct kvm_cpuid_entry2 *entry;
+	unsigned long cycles_buffer;
 	bool exact, used_max_basic = false;
 
 	printk("inside kvm_cpuid() and function value is %x", function);
@@ -1075,9 +1076,9 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 		if(function == 0x4FFFFFFF) {
 			printk("i got inside 0x4fffffff block");
 			*eax = atomic_read(&exits);
-			unsigned long cycles_buffer = atomic_long_read(&cycles);
+			cycles_buffer = atomic_long_read(&cycles);
 			*ebx = (u32)(0xFFFFFFFFLL & cycles_buffer) ;//low 32-bit
-			*ecx = (u32)((0xFFFFFFFF00000000LL & cycles_buffer >> 32); // high 32-bit
+			*ecx = (u32)((0xFFFFFFFF00000000LL & cycles_buffer) >> 32); // high 32-bit
 			return exact;
 		}
 
