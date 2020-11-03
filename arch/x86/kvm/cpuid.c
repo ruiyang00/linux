@@ -25,13 +25,18 @@
 #include "pmu.h"
 
 
+/* Initially i declare them in vmx.c because I think it make more sense to put 
+ * exits and cycles at vmx.c's vmx_handle_exit() because it is the top level.
+ * But have some error occured  when building kernel.
+ * It seems like Makefile instrcution will build cpuid.c file first, 
+ * so i declare and export them right here.
+ */
 
+atomic_t exits = ATOMIC_INIT(0);
+atomic_long_t cycles = ATOMIC_INIT(0);
 
-//importing from vmx.c file and write them to eax and eca
-extern atomic_t exits;
-extern atomic_long_t cycles;
-
-
+EXPORT_SYMBOL(exits);
+EXPORT_SYMBOL(cycles);
 
 /*
  * Unlike "struct cpuinfo_x86.x86_capability", kvm_cpu_caps doesn't need to be
@@ -1064,6 +1069,7 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 {
 	u32 orig_function = *eax, function = *eax, index = *ecx;
 	struct kvm_cpuid_entry2 *entry;
+	u64 cycles_buffer;
 	bool exact, used_max_basic = false;
 
 	printk("inside kvm_cpuid() and function value is %x", function);
@@ -1074,13 +1080,19 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 		printk("branch 1");
 		if(function == 0x4FFFFFFF) {
 			printk("i got inside 0x4fffffff block");
-			*eax = 100;
-			*ebx = 200;
-			*ecx = 300;
-			*edx = 400;
-			return exact;
-		}
+			
+			//*eax = 100;
+			*eax = (u32) atomic_read(&exits);
+			cycles_buffer =(u64)atomic_long_read(&cycles);
+			
+			printk("cycles_buffer before %llu", cycles_buffer);
 
+			*ebx = (u32)(0xFFFFFFFFLL & cycles_buffer) ;//low 32-bit
+			*ecx = (u32)(cycles_buffer >> 32); // high 32-bit
+			printk("ebx %u", *ebx);
+			printk("ecx %u", *ecx);
+			return exact;
+		}	
 		entry = get_out_of_range_cpuid_entry(vcpu, &function, index);
 		used_max_basic = !!entry;
 	}

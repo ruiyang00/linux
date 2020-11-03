@@ -12,7 +12,7 @@
  *   Avi Kivity   <avi@qumranet.com>
  *   Yaniv Kamay  <yaniv@qumranet.com>
  */
-
+#include <linux/atomic.h>
 #include <linux/highmem.h>
 #include <linux/hrtimer.h>
 #include <linux/kernel.h>
@@ -65,15 +65,11 @@
 
 
 
-
 /******below segment is only used for cmpe283 purpose************/
 //start
 
-atomic_t exits = ATOMIC_INIT(0);
-atomic_long_t cycles = ATOMIC_INIT(0);
-
-EXPORT_SYMBOL(exits);
-EXPORT_SYMBOL(cycles);
+extern atomic_t exits;
+extern atomic_long_t cycles;
 
 /******************************end*****************/
 
