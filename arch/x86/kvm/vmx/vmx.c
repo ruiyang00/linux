@@ -47,6 +47,7 @@
 #include <asm/spec-ctrl.h>
 #include <asm/virtext.h>
 #include <asm/vmx.h>
+#include <uapi/asm/vmx.h>
 
 #include "capabilities.h"
 #include "cpuid.h"
@@ -70,8 +71,57 @@
 
 extern atomic_t exits;
 extern atomic_long_t cycles;
-
-/******************************end*****************/
+extern atomic_t nmi_exits;
+extern atomic_t ei_exits;
+extern atomic_t tf_exits;
+extern atomic_t nmi_window_exits;
+extern atomic_t io_exits;
+extern atomic_t cr_exits;
+extern atomic_t dr_exits;
+extern atomic_t cpuid_exits;
+extern atomic_t rdmsr_exits;
+extern atomic_t wrmsr_exits;
+extern atomic_t interrupt_window_exits;
+extern atomic_t halt_exits;
+extern atomic_t invd_exits;
+extern atomic_t invlpg_exits;
+extern atomic_t rdpmc_exits;
+extern atomic_t vmcall_exits;
+extern atomic_t vmclear_exits;
+extern atomic_t vmlaunch_exits;
+extern atomic_t vmprtld_exits;
+extern atomic_t vmptrst_exits;
+extern atomic_t vmread_exits;
+extern atomic_t vmresume_exits;
+extern atomic_t vmwrite_exits;
+extern atomic_t vmoff_exits;
+extern atomic_t vmon_exits;
+extern atomic_t tpr_below_threshold_exits;
+extern atomic_t apic_access_exits;
+extern atomic_t apic_write_exits;
+extern atomic_t apic_eoi_induced_exits;
+extern atomic_t wbinvd_exits;
+extern atomic_t xsetbv_exits;
+extern atomic_t task_switch_exits;
+extern atomic_t machine_check_exits;
+extern atomic_t gdtr_exits;
+extern atomic_t ldtr_exits;
+extern atomic_t ept_violation_exits;
+extern atomic_t ept_misconfig_exits;
+extern atomic_t pause_ins_exits;
+extern atomic_t mwait_ins_exits;
+extern atomic_t monitor_trap_exits;
+extern atomic_t monitor_ins_exits;
+extern atomic_t invept_exits;
+extern atomic_t invvpid_exits;
+extern atomic_t rdrand_exits;
+extern atomic_t rdseed_exits;
+extern atomic_t pml_full_exits;
+extern atomic_t invpcid_exits;
+extern atomic_t vmfunc_exits;
+extern atomic_t premption_timer_exits;
+extern atomic_t encls_exits;
+/****end*****************/
 
 MODULE_AUTHOR("Qumranet");
 MODULE_LICENSE("GPL");
@@ -5951,7 +6001,159 @@ static unsigned long long rdtsc_cmpe283(void)
 
 }
 
+void cmpe283_increase_exits(u32 exit_reason) {
+	atomic_add(1, &exits);
 
+	switch (exit_reason) {
+		case EXIT_REASON_EXCEPTION_NMI:
+                        atomic_add(1, &nmi_exits);
+                        break;
+                case EXIT_REASON_EXTERNAL_INTERRUPT:
+                        atomic_add(1, &ei_exits);
+                        break;
+                case EXIT_REASON_TRIPLE_FAULT:
+                        atomic_add(1, &tf_exits);
+                        break;
+                case EXIT_REASON_NMI_WINDOW:
+                        atomic_add(1, &tf_exits);
+                        break;
+                case EXIT_REASON_IO_INSTRUCTION:
+                        atomic_add(1, &io_exits);
+                        break;
+                case EXIT_REASON_CR_ACCESS:
+                        atomic_add(1, &cr_exits);
+                        break;
+                case EXIT_REASON_DR_ACCESS:
+                        atomic_add(1, &dr_exits);
+                        break;
+                case EXIT_REASON_CPUID:
+                        atomic_add(1, &cpuid_exits);
+                        break;
+                case EXIT_REASON_MSR_READ:
+                        atomic_add(1, &rdmsr_exits);
+                        break;
+                case EXIT_REASON_MSR_WRITE:
+                        atomic_add(1, &wrmsr_exits);
+                        break;
+                case EXIT_REASON_INTERRUPT_WINDOW:
+                        atomic_add(1, &interrupt_window_exits);
+                        break;
+                case EXIT_REASON_HLT:
+                        atomic_add(1, &halt_exits);
+                        break;
+                case EXIT_REASON_INVD:
+                        atomic_add(1, &invd_exits);
+                        break;
+                case EXIT_REASON_INVLPG:
+			atomic_add(1, &invlpg_exits);
+                    	break;
+                case EXIT_REASON_RDPMC:
+                    	atomic_add(1, &rdpmc_exits);
+                    	break;
+                case EXIT_REASON_VMCALL:
+                    	atomic_add(1, &vmcall_exits);
+                    	break;
+                case EXIT_REASON_VMCLEAR:
+                    	atomic_add(1, &vmclear_exits);
+                    	break;
+                case EXIT_REASON_VMLAUNCH:
+                    	atomic_add(1, &vmlaunch_exits);
+                    	break;
+                case EXIT_REASON_VMPTRLD:
+                    	atomic_add(1, &vmprtld_exits);
+                    	break;            
+                case EXIT_REASON_VMPTRST:
+                    	atomic_add(1, &vmptrst_exits);
+                    	break;
+                case EXIT_REASON_VMREAD:
+                    	atomic_add(1, &vmread_exits);
+                    	break;        
+                case EXIT_REASON_VMRESUME:
+                    	atomic_add(1, &vmresume_exits);
+                    	break;
+                case EXIT_REASON_VMWRITE:
+                    	atomic_add(1, &vmwrite_exits);
+                    	break;
+                case EXIT_REASON_VMOFF:
+                    	atomic_add(1, &vmoff_exits);
+                    	break;
+                case EXIT_REASON_VMON:
+                    	atomic_add(1, &vmon_exits);
+                    	break;
+                case EXIT_REASON_TPR_BELOW_THRESHOLD:
+                    	atomic_add(1, &tpr_below_threshold_exits);
+                    	break;            
+                case EXIT_REASON_APIC_ACCESS:
+                    	atomic_add(1, &apic_access_exits);
+                    	break;
+                case EXIT_REASON_APIC_WRITE:
+                    	atomic_add(1, &apic_write_exits);
+                    	break;
+                case EXIT_REASON_EOI_INDUCED:
+                    	atomic_add(1, &apic_eoi_induced_exits);
+                    	break;
+                case EXIT_REASON_WBINVD:
+                    	atomic_add(1, &wbinvd_exits);
+                    	break;
+                case EXIT_REASON_XSETBV:
+                    	atomic_add(1, &xsetbv_exits);
+                    	break;
+                case EXIT_REASON_TASK_SWITCH:
+                    	atomic_add(1, &task_switch_exits);
+                    	break;
+                case EXIT_REASON_MCE_DURING_VMENTRY:
+                    	atomic_add(1, &machine_check_exits);
+                    	break;
+                case EXIT_REASON_GDTR_IDTR:
+                    	atomic_add(1, &gdtr_exits);
+                    	break;
+                case EXIT_REASON_LDTR_TR:
+                    	atomic_add(1, &ldtr_exits);
+                    	break;
+                case EXIT_REASON_EPT_VIOLATION:
+                    	atomic_add(1, &ept_violation_exits);
+                    	break;
+                case EXIT_REASON_EPT_MISCONFIG:
+                    	atomic_add(1, &ept_misconfig_exits);
+                    	break;
+                case EXIT_REASON_PAUSE_INSTRUCTION:
+                    	atomic_add(1, &pause_ins_exits);
+                    	break;
+                case EXIT_REASON_MWAIT_INSTRUCTION:
+                    	atomic_add(1, &mwait_ins_exits);
+                    	break;
+                case EXIT_REASON_MONITOR_TRAP_FLAG:
+                    	atomic_add(1, &monitor_trap_exits);
+                    	break;
+                case EXIT_REASON_MONITOR_INSTRUCTION:
+                    	atomic_add(1, &monitor_ins_exits);
+                    	break;     
+                case EXIT_REASON_INVVPID:
+                    	atomic_add(1, &invvpid_exits);
+                    	break;
+                case EXIT_REASON_RDRAND:
+                    	atomic_add(1, &rdrand_exits);
+                    	break;
+                case EXIT_REASON_RDSEED:
+                    	atomic_add(1, &rdseed_exits);
+                    	break;
+                case EXIT_REASON_PML_FULL:
+                    	atomic_add(1, &pml_full_exits);
+                    	break;
+                case EXIT_REASON_INVPCID:
+                    	atomic_add(1, &invpcid_exits);
+                    	break;
+                case EXIT_REASON_VMFUNC:
+                    	atomic_add(1, &vmfunc_exits);
+                    	break;
+                case EXIT_REASON_PREEMPTION_TIMER:
+                    	atomic_add(1, &premption_timer_exits);
+                    	break;
+                case EXIT_REASON_ENCLS:
+                    	atomic_add(1, &encls_exits);
+                    	break;
+        }
+}
 /*
  * The guest has exited.  See if we can fix it or if we need userspace
  * assistance.
@@ -5964,8 +6166,7 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	unsigned long long cycle_start, cycle_end;
 	int ret_buffer = 0;
 	cycle_start = rdtsc_cmpe283();
-	atomic_add(1 ,&exits);
-	
+	cmpe283_increase_exits(exit_reason);	
 
 	/*
 	 * Flush logged GPAs PML buffer, this will make dirty_bitmap more

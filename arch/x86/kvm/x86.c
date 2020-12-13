@@ -103,6 +103,20 @@ static u64 __read_mostly cr4_reserved_bits = CR4_RESERVED_BITS;
 #define KVM_X2APIC_API_VALID_FLAGS (KVM_X2APIC_API_USE_32BIT_IDS | \
                                     KVM_X2APIC_API_DISABLE_BROADCAST_QUIRK)
 
+
+/*
+	cmpe283 varibles
+
+*/
+extern atomic_t halt_exits;
+
+
+
+
+
+
+
+
 static void update_cr8_intercept(struct kvm_vcpu *vcpu);
 static void process_nmi(struct kvm_vcpu *vcpu);
 static void enter_smm(struct kvm_vcpu *vcpu);
@@ -7933,6 +7947,7 @@ int kvm_emulate_halt(struct kvm_vcpu *vcpu)
 	 * TODO: we might be squashing a GUESTDBG_SINGLESTEP-triggered
 	 * KVM_EXIT_DEBUG here.
 	 */
+	atomic_add(1, &halt_exits);
 	return kvm_vcpu_halt(vcpu) && ret;
 }
 EXPORT_SYMBOL_GPL(kvm_emulate_halt);

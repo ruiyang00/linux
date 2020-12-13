@@ -17,6 +17,7 @@
 
 #include <asm/processor.h>
 #include <asm/user.h>
+#include <uapi/asm/vmx.h>
 #include <asm/fpu/xstate.h>
 #include "cpuid.h"
 #include "lapic.h"
@@ -35,8 +36,113 @@
 atomic_t exits = ATOMIC_INIT(0);
 atomic_long_t cycles = ATOMIC_INIT(0);
 
+
+/*varibles for each exits */
+atomic_t nmi_exits = ATOMIC_INIT(0);
+atomic_t ei_exits = ATOMIC_INIT(0);
+atomic_t tf_exits = ATOMIC_INIT(0);
+atomic_t nmi_window_exits = ATOMIC_INIT(0);
+atomic_t io_exits = ATOMIC_INIT(0);
+atomic_t cr_exits = ATOMIC_INIT(0);
+atomic_t dr_exits = ATOMIC_INIT(0);
+atomic_t cpuid_exits = ATOMIC_INIT(0);
+atomic_t rdmsr_exits = ATOMIC_INIT(0);
+atomic_t wrmsr_exits = ATOMIC_INIT(0);
+atomic_t interrupt_window_exits = ATOMIC_INIT(0);
+atomic_t halt_exits = ATOMIC_INIT(0);
+atomic_t invd_exits = ATOMIC_INIT(0);
+atomic_t invlpg_exits = ATOMIC_INIT(0);
+atomic_t rdpmc_exits = ATOMIC_INIT(0);
+atomic_t vmcall_exits = ATOMIC_INIT(0);
+atomic_t vmclear_exits = ATOMIC_INIT(0);
+atomic_t vmlaunch_exits = ATOMIC_INIT(0);
+atomic_t vmprtld_exits = ATOMIC_INIT(0);
+atomic_t vmptrst_exits = ATOMIC_INIT(0);
+atomic_t vmread_exits = ATOMIC_INIT(0);
+atomic_t vmresume_exits = ATOMIC_INIT(0);
+atomic_t vmwrite_exits = ATOMIC_INIT(0);
+atomic_t vmoff_exits = ATOMIC_INIT(0);
+atomic_t vmon_exits = ATOMIC_INIT(0);
+atomic_t tpr_below_threshold_exits = ATOMIC_INIT(0);
+atomic_t apic_access_exits = ATOMIC_INIT(0);
+atomic_t apic_write_exits = ATOMIC_INIT(0);
+atomic_t apic_eoi_induced_exits = ATOMIC_INIT(0);
+atomic_t wbinvd_exits = ATOMIC_INIT(0);
+atomic_t xsetbv_exits = ATOMIC_INIT(0);
+atomic_t task_switch_exits = ATOMIC_INIT(0);
+atomic_t machine_check_exits = ATOMIC_INIT(0);
+atomic_t gdtr_exits = ATOMIC_INIT(0);
+atomic_t ldtr_exits = ATOMIC_INIT(0);
+atomic_t ept_violation_exits = ATOMIC_INIT(0);
+atomic_t ept_misconfig_exits = ATOMIC_INIT(0);
+atomic_t pause_ins_exits = ATOMIC_INIT(0);
+atomic_t mwait_ins_exits = ATOMIC_INIT(0);
+atomic_t monitor_trap_exits = ATOMIC_INIT(0);
+atomic_t monitor_ins_exits = ATOMIC_INIT(0);
+atomic_t invept_exits = ATOMIC_INIT(0);
+atomic_t invvpid_exits = ATOMIC_INIT(0);
+atomic_t rdrand_exits = ATOMIC_INIT(0);
+atomic_t rdseed_exits = ATOMIC_INIT(0);
+atomic_t pml_full_exits = ATOMIC_INIT(0);
+atomic_t invpcid_exits = ATOMIC_INIT(0);
+atomic_t vmfunc_exits = ATOMIC_INIT(0);
+atomic_t premption_timer_exits = ATOMIC_INIT(0);
+atomic_t encls_exits = ATOMIC_INIT(0);
+
 EXPORT_SYMBOL(exits);
 EXPORT_SYMBOL(cycles);
+EXPORT_SYMBOL(nmi_exits);
+EXPORT_SYMBOL(ei_exits);
+EXPORT_SYMBOL(tf_exits);
+EXPORT_SYMBOL(nmi_window_exits);
+EXPORT_SYMBOL(io_exits);
+EXPORT_SYMBOL(cr_exits);
+EXPORT_SYMBOL(dr_exits);
+EXPORT_SYMBOL(cpuid_exits);
+EXPORT_SYMBOL(rdmsr_exits);
+EXPORT_SYMBOL(wrmsr_exits);
+EXPORT_SYMBOL(interrupt_window_exits);
+EXPORT_SYMBOL(halt_exits);
+EXPORT_SYMBOL(invd_exits);
+EXPORT_SYMBOL(invlpg_exits);
+EXPORT_SYMBOL(rdpmc_exits);
+EXPORT_SYMBOL(vmcall_exits);
+EXPORT_SYMBOL(vmclear_exits);
+EXPORT_SYMBOL(vmlaunch_exits);
+EXPORT_SYMBOL(vmprtld_exits);
+EXPORT_SYMBOL(vmptrst_exits);
+EXPORT_SYMBOL(vmread_exits);
+EXPORT_SYMBOL(vmresume_exits);
+EXPORT_SYMBOL(vmwrite_exits);
+EXPORT_SYMBOL(vmoff_exits);
+EXPORT_SYMBOL(vmon_exits);
+EXPORT_SYMBOL(tpr_below_threshold_exits);
+EXPORT_SYMBOL(apic_access_exits);
+EXPORT_SYMBOL(apic_write_exits);
+EXPORT_SYMBOL(apic_eoi_induced_exits);
+EXPORT_SYMBOL(wbinvd_exits);
+EXPORT_SYMBOL(xsetbv_exits);
+EXPORT_SYMBOL(task_switch_exits);
+EXPORT_SYMBOL(machine_check_exits);
+EXPORT_SYMBOL(gdtr_exits);
+EXPORT_SYMBOL(ldtr_exits);
+EXPORT_SYMBOL(ept_violation_exits);
+EXPORT_SYMBOL(ept_misconfig_exits);
+EXPORT_SYMBOL(pause_ins_exits);
+EXPORT_SYMBOL(mwait_ins_exits);
+EXPORT_SYMBOL(monitor_trap_exits);
+EXPORT_SYMBOL(monitor_ins_exits);
+EXPORT_SYMBOL(invept_exits);
+EXPORT_SYMBOL(invvpid_exits);
+EXPORT_SYMBOL(rdrand_exits);
+EXPORT_SYMBOL(rdseed_exits);
+EXPORT_SYMBOL(pml_full_exits);
+EXPORT_SYMBOL(invpcid_exits);
+EXPORT_SYMBOL(vmfunc_exits);
+EXPORT_SYMBOL(premption_timer_exits);
+EXPORT_SYMBOL(encls_exits);
+/*****extern varibles for each exit****/
+
 
 /*
  * Unlike "struct cpuinfo_x86.x86_capability", kvm_cpu_caps doesn't need to be
@@ -44,6 +150,7 @@ EXPORT_SYMBOL(cycles);
  */
 u32 kvm_cpu_caps[NCAPINTS] __read_mostly;
 EXPORT_SYMBOL_GPL(kvm_cpu_caps);
+
 
 static u32 xstate_required_size(u64 xstate_bv, bool compacted)
 {
@@ -1064,14 +1171,231 @@ get_out_of_range_cpuid_entry(struct kvm_vcpu *vcpu, u32 *fn_ptr, u32 index)
 	return kvm_find_cpuid_entry(vcpu, basic->eax, index);
 }
 
+bool exit_type_enabled(u32 *ecx)
+{
+	u32 enable = *ecx;
+	if(enable == 4 || enable == 5 || enable == 6 
+		|| enable == 11 || enable == 17 || enable == 35 
+		|| enable == 38 || enable == 42 || enable == 65
+		|| enable == 66) {
+		return false;
+	}
+
+	return true;
+}
+
+bool exit_type_defined(u32 *ecx)
+{	
+	u32 define = *ecx;
+	if(define < 0 || define > 68){
+		return false;
+	}
+
+	return true;
+}
+
+void query_exits(u32 *eax, u32 *ebx, u32 *ecx,
+		 u32 *edx)
+{
+	u32 exit_type = *ecx;
+	bool define = false;
+	bool enable = false; 
+	define = exit_type_defined(&exit_type);
+	if(!define){
+		printk("inside define");
+		*eax = 0;
+		*ebx = 0;
+		*ecx = 0;
+		*edx = 0xFFFFFFFF;
+		return;	
+	}
+	enable = exit_type_enabled(&exit_type);
+	if(!enable) {
+		printk("insde enable");
+		*eax = 0;
+		*ebx = 0;
+		*ecx = 0;
+		*edx = 0;
+		return;
+	}
+
+
+	*ebx = (u32)atomic_read(&exits);
+	printk("total exits=%u", *ebx);
+	switch (exit_type) {
+		case EXIT_REASON_EXCEPTION_NMI:
+			*eax = (u32)atomic_read(&nmi_exits);
+			break;
+		case EXIT_REASON_EXTERNAL_INTERRUPT:
+			*eax = (u32)atomic_read(&ei_exits);
+			break;
+		case EXIT_REASON_TRIPLE_FAULT:
+			*eax = (u32)atomic_read(&tf_exits);
+			break;
+		case EXIT_REASON_NMI_WINDOW:
+			*eax = (u32)atomic_read(&tf_exits);
+			break;
+		case EXIT_REASON_IO_INSTRUCTION:
+			*eax = (u32)atomic_read(&io_exits);
+			break;
+		case EXIT_REASON_CR_ACCESS:
+			*eax = (u32)atomic_read(&cr_exits);
+			break;
+		case EXIT_REASON_DR_ACCESS:
+			*eax = (u32)atomic_read(&dr_exits);
+			break;
+		case EXIT_REASON_CPUID:
+			*eax = (u32)atomic_read(&cpuid_exits);
+			break;
+		case EXIT_REASON_MSR_READ:
+			*eax = (u32)atomic_read(&rdmsr_exits);
+			break;
+		case EXIT_REASON_MSR_WRITE:
+			*eax = (u32)atomic_read(&wrmsr_exits);
+			break;
+		case EXIT_REASON_INTERRUPT_WINDOW:
+			*eax = (u32)atomic_read(&interrupt_window_exits);
+			break;
+		case EXIT_REASON_HLT:
+			*eax = (u32)atomic_read(&halt_exits);
+			break;
+		case EXIT_REASON_INVD:
+			*eax = (u32)atomic_read(&invd_exits);
+			break;
+		case EXIT_REASON_INVLPG:
+			*eax = (u32)atomic_read(&invlpg_exits);
+			break;
+
+		case EXIT_REASON_RDPMC:
+			*eax = (u32)atomic_read(&rdpmc_exits);
+			break;
+		case EXIT_REASON_VMCALL:
+			*eax = (u32)atomic_read(&vmcall_exits);
+			break;
+	
+		case EXIT_REASON_VMCLEAR:
+			*eax = (u32)atomic_read(&vmclear_exits);
+			break;
+
+		case EXIT_REASON_VMLAUNCH:
+			*eax = (u32)atomic_read(&vmlaunch_exits);
+			break;
+
+		case EXIT_REASON_VMPTRLD:
+			*eax = (u32)atomic_read(&vmprtld_exits);
+			break;
+		
+		case EXIT_REASON_VMPTRST:
+			*eax = (u32)atomic_read(&vmptrst_exits);
+			break;
+
+		case EXIT_REASON_VMREAD:
+			*eax = (u32)atomic_read(&vmread_exits);
+			break;
+		
+		case EXIT_REASON_VMRESUME:
+			*eax = (u32)atomic_read(&vmresume_exits);
+			break;
+		case EXIT_REASON_VMWRITE:
+			*eax = (u32)atomic_read(&vmwrite_exits);
+			break;
+
+		case EXIT_REASON_VMOFF:
+			*eax = (u32)atomic_read(&vmoff_exits);
+			break;
+
+		case EXIT_REASON_VMON:
+			*eax = (u32)atomic_read(&vmon_exits);
+			break;
+
+		case EXIT_REASON_TPR_BELOW_THRESHOLD:
+			*eax = (u32)atomic_read(&tpr_below_threshold_exits);
+			break;
+		case EXIT_REASON_APIC_ACCESS:
+			*eax = (u32)atomic_read(&apic_access_exits);
+			break;
+		case EXIT_REASON_APIC_WRITE:
+			*eax = (u32)atomic_read(&apic_write_exits);
+			break;
+		case EXIT_REASON_EOI_INDUCED:
+			*eax = (u32)atomic_read(&apic_eoi_induced_exits);
+			break;
+		case EXIT_REASON_WBINVD:
+			*eax = (u32)atomic_read(&wbinvd_exits);
+			break;
+		case EXIT_REASON_XSETBV:
+			*eax = (u32)atomic_read(&xsetbv_exits);
+			break;
+		case EXIT_REASON_TASK_SWITCH:
+			*eax = (u32)atomic_read(&task_switch_exits);
+			break;
+
+		case EXIT_REASON_MCE_DURING_VMENTRY:
+			*eax = (u32)atomic_read(&machine_check_exits);
+			break;
+		case EXIT_REASON_GDTR_IDTR:
+			*eax = (u32)atomic_read(&gdtr_exits);
+			break;
+		case EXIT_REASON_LDTR_TR:
+			*eax = (u32)atomic_read(&ldtr_exits);
+			break;
+		case EXIT_REASON_EPT_VIOLATION:
+			*eax = (u32)atomic_read(&ept_violation_exits);
+			break;
+		case EXIT_REASON_EPT_MISCONFIG:
+			*eax = (u32)atomic_read(&ept_misconfig_exits);
+			break;
+		case EXIT_REASON_PAUSE_INSTRUCTION:
+			*eax = (u32)atomic_read(&pause_ins_exits);
+			break;
+		case EXIT_REASON_MWAIT_INSTRUCTION:
+			*eax = (u32)atomic_read(&mwait_ins_exits);
+		case EXIT_REASON_MONITOR_TRAP_FLAG:
+			*eax = (u32)atomic_read(&monitor_trap_exits);
+			break;
+		case EXIT_REASON_MONITOR_INSTRUCTION:
+			*eax = (u32)atomic_read(&monitor_ins_exits);
+			break;
+		 
+		case EXIT_REASON_INVVPID:
+			*eax = (u32)atomic_read(&invvpid_exits);
+			break;
+
+		case EXIT_REASON_RDRAND:
+			*eax = (u32)atomic_read(&rdrand_exits);
+			break;
+
+		case EXIT_REASON_RDSEED:
+			*eax = (u32)atomic_read(&rdseed_exits);
+			break;
+
+		case EXIT_REASON_PML_FULL:
+			*eax = (u32)atomic_read(&pml_full_exits);
+			break;
+
+		case EXIT_REASON_INVPCID:
+			*eax = (u32)atomic_read(&invpcid_exits);
+			break;
+		case EXIT_REASON_VMFUNC:
+			*eax = (u32)atomic_read(&vmfunc_exits);
+			break;
+		case EXIT_REASON_PREEMPTION_TIMER:
+			*eax = (u32)atomic_read(&premption_timer_exits);
+			break;
+		case EXIT_REASON_ENCLS:
+			*eax = (u32)atomic_read(&encls_exits);
+			break;
+	}
+
+}
+
 bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 	       u32 *ecx, u32 *edx, bool exact_only)
 {
 	u32 orig_function = *eax, function = *eax, index = *ecx;
 	struct kvm_cpuid_entry2 *entry;
-	u64 cycles_buffer;
 	bool exact, used_max_basic = false;
-
+	u32 halt_exit_buffer;
 	printk("inside kvm_cpuid() and function value is %x", function);
 	entry = kvm_find_cpuid_entry(vcpu, function, index);
 	exact = !!entry;
@@ -1081,8 +1405,8 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 		if(function == 0x4FFFFFFF) {
 			printk("i got inside 0x4fffffff block");
 			
-			//*eax = 100;
-			*eax = (u32) atomic_read(&exits);
+			/*eax = 100;
+			*eax = atomic_read(exits);
 			cycles_buffer =(u64)atomic_long_read(&cycles);
 			
 			printk("cycles_buffer before %llu", cycles_buffer);
@@ -1091,9 +1415,30 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 			*ecx = (u32)(cycles_buffer >> 32); // high 32-bit
 			printk("ebx %u", *ebx);
 			printk("ecx %u", *ecx);
+			return exact;*/
+		}
+		if(function == 0x4FFFFFFE) {
+			
+			printk("0x4ffffffe leaf function got call");
+			printk("input value for ecx: %u", index);
+			
+			printk("eax %u", *eax);
+			printk("ebx %u", *ebx);
+			printk("ecx %u", *ecx);
+			printk("edx %u", *edx);
+			query_exits(eax, ebx, ecx, edx);
+			printk("eax %u", *eax);
+			printk("ebx %u", *ebx);
+			printk("ecx %u", *ecx);
+			printk("edx %u", *edx);
+			halt_exit_buffer = (u32)atomic_read(&halt_exits);
+			printk("halt_exits: %u", halt_exit_buffer);
 			return exact;
-		}	
+		}
+
 		entry = get_out_of_range_cpuid_entry(vcpu, &function, index);
+		
+		
 		used_max_basic = !!entry;
 	}
 
