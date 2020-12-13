@@ -6015,7 +6015,7 @@ void cmpe283_increase_exits(u32 exit_reason) {
                         atomic_add(1, &tf_exits);
                         break;
                 case EXIT_REASON_NMI_WINDOW:
-                        atomic_add(1, &tf_exits);
+                        atomic_add(1, &nmi_exits);
                         break;
                 case EXIT_REASON_IO_INSTRUCTION:
                         atomic_add(1, &io_exits);

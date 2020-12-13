@@ -1174,10 +1174,11 @@ get_out_of_range_cpuid_entry(struct kvm_vcpu *vcpu, u32 *fn_ptr, u32 index)
 bool exit_type_enabled(u32 *ecx)
 {
 	u32 enable = *ecx;
-	if(enable == 4 || enable == 5 || enable == 6 
-		|| enable == 11 || enable == 17 || enable == 35 
-		|| enable == 38 || enable == 42 || enable == 65
-		|| enable == 66) {
+	if(enable == 3 || enable == 4 || enable == 5 || enable == 6 || enable == 11 
+		|| enable == 16 || enable == 17 || enable == 33 || enable == 34 
+		|| enable == 35 || enable == 38 || enable == 42 || enable == 51 
+		|| enable == 63 || enable == 64 || enable == 65 || enable == 66
+		|| enable == 67 || enable == 68) {
 		return false;
 	}
 
@@ -1200,9 +1201,9 @@ void query_exits(u32 *eax, u32 *ebx, u32 *ecx,
 	u32 exit_type = *ecx;
 	bool define = false;
 	bool enable = false; 
+	printk("exit_type: %u", exit_type);
 	define = exit_type_defined(&exit_type);
 	if(!define){
-		printk("inside define");
 		*eax = 0;
 		*ebx = 0;
 		*ecx = 0;
@@ -1211,7 +1212,6 @@ void query_exits(u32 *eax, u32 *ebx, u32 *ecx,
 	}
 	enable = exit_type_enabled(&exit_type);
 	if(!enable) {
-		printk("insde enable");
 		*eax = 0;
 		*ebx = 0;
 		*ecx = 0;
@@ -1220,8 +1220,6 @@ void query_exits(u32 *eax, u32 *ebx, u32 *ecx,
 	}
 
 
-	*ebx = (u32)atomic_read(&exits);
-	printk("total exits=%u", *ebx);
 	switch (exit_type) {
 		case EXIT_REASON_EXCEPTION_NMI:
 			*eax = (u32)atomic_read(&nmi_exits);
@@ -1233,7 +1231,7 @@ void query_exits(u32 *eax, u32 *ebx, u32 *ecx,
 			*eax = (u32)atomic_read(&tf_exits);
 			break;
 		case EXIT_REASON_NMI_WINDOW:
-			*eax = (u32)atomic_read(&tf_exits);
+			*eax = (u32)atomic_read(&nmi_window_exits);
 			break;
 		case EXIT_REASON_IO_INSTRUCTION:
 			*eax = (u32)atomic_read(&io_exits);
@@ -1396,7 +1394,6 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 	struct kvm_cpuid_entry2 *entry;
 	bool exact, used_max_basic = false;
 	u32 halt_exit_buffer;
-	printk("inside kvm_cpuid() and function value is %x", function);
 	entry = kvm_find_cpuid_entry(vcpu, function, index);
 	exact = !!entry;
 
