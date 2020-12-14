@@ -1198,10 +1198,14 @@ bool exit_type_defined(u32 *ecx)
 void query_exits(u32 *eax, u32 *ebx, u32 *ecx,
 		 u32 *edx)
 {
+	u32 exits_buffer;
 	u32 exit_type = *ecx;
 	bool define = false;
 	bool enable = false; 
 	printk("exit_type: %u", exit_type);
+	
+	exits_buffer = (u32)atomic_read(&exits);
+	printk("total exits=%u", exits_buffer);
 	define = exit_type_defined(&exit_type);
 	if(!define){
 		*eax = 0;
@@ -1218,7 +1222,6 @@ void query_exits(u32 *eax, u32 *ebx, u32 *ecx,
 		*edx = 0;
 		return;
 	}
-
 
 	switch (exit_type) {
 		case EXIT_REASON_EXCEPTION_NMI:
@@ -1354,6 +1357,9 @@ void query_exits(u32 *eax, u32 *ebx, u32 *ecx,
 		case EXIT_REASON_MONITOR_INSTRUCTION:
 			*eax = (u32)atomic_read(&monitor_ins_exits);
 			break;
+		case EXIT_REASON_INVEPT:
+			*eax = (u32)atomic_read(&invept_exits);
+			break;
 		 
 		case EXIT_REASON_INVVPID:
 			*eax = (u32)atomic_read(&invvpid_exits);
@@ -1386,14 +1392,116 @@ void query_exits(u32 *eax, u32 *ebx, u32 *ecx,
 	}
 
 }
-
+void assignment04_dmesg(void) {
+	u32 buffer;
+	printk("with ept\n");
+	buffer = (u32)atomic_read(&nmi_exits);
+	printk("nmi_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&ei_exits);
+	printk("ei_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&tf_exits);
+	printk("tf_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&nmi_window_exits);
+	printk("nmi_window_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&io_exits);
+	printk("io_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&cr_exits);
+	printk("cr_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&dr_exits);
+	printk("dr_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&cpuid_exits);
+	printk("cpuid_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&rdmsr_exits);
+	printk("rdmsr_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&wrmsr_exits);
+	printk("wrmsr_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&interrupt_window_exits);
+	printk("interrupt_window_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&halt_exits);
+	printk("halt_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&invd_exits);
+	printk("invd_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&invlpg_exits);
+	printk("invlpg_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&rdpmc_exits);
+	printk("rdpmc_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&vmcall_exits);
+	printk("vmcall_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&vmclear_exits);
+	printk("vmclear_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&vmlaunch_exits);
+	printk("vmlaunch_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&vmprtld_exits);
+	printk("vmprtld_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&vmptrst_exits);
+	printk("vmprtst_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&vmread_exits);
+	printk("vmread_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&vmresume_exits);
+	printk("vmresume_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&vmwrite_exits);
+	printk("vmwrite_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&vmoff_exits);
+	printk("vmoff_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&vmon_exits);
+	printk("vmon_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&tpr_below_threshold_exits);
+	printk("tpr_below_threshold_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&apic_access_exits);
+	printk("apic_access_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&apic_write_exits);
+	printk("apic_write_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&apic_eoi_induced_exits);
+	printk("apic_eoi_induced_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&wbinvd_exits);
+	printk("wbinvd_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&xsetbv_exits);
+	printk("xsetbv_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&task_switch_exits);
+	printk("task_switch_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&machine_check_exits);
+	printk("machine_check_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&gdtr_exits);
+	printk("gdtr_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&ldtr_exits);
+	printk("ldtr_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&ept_violation_exits);
+	printk("ept_violation_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&ept_misconfig_exits);
+	printk("ept_misconfig_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&pause_ins_exits);
+	printk("pause_ins_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&mwait_ins_exits);
+	printk("mwait_ins_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&monitor_trap_exits);
+	printk("monitor_trap_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&monitor_ins_exits);
+	printk("monitor_ins_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&invept_exits);
+	printk("invept_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&invvpid_exits);
+	printk("invvpid_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&rdrand_exits);
+	printk("rdrand_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&rdseed_exits);
+	printk("rdseed_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&pml_full_exits);
+	printk("pml_full_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&invpcid_exits);
+	printk("invpcid_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&vmfunc_exits);
+	printk("vmfunc_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&premption_timer_exits);
+	printk("premption_timer_exits=%u\n", buffer);
+	buffer = (u32)atomic_read(&encls_exits);
+	printk("encls_exits=%u\n", buffer);
+}
 bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 	       u32 *ecx, u32 *edx, bool exact_only)
 {
 	u32 orig_function = *eax, function = *eax, index = *ecx;
 	struct kvm_cpuid_entry2 *entry;
 	bool exact, used_max_basic = false;
-	u32 halt_exit_buffer;
 	entry = kvm_find_cpuid_entry(vcpu, function, index);
 	exact = !!entry;
 
@@ -1418,18 +1526,8 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 			
 			printk("0x4ffffffe leaf function got call");
 			printk("input value for ecx: %u", index);
-			
-			printk("eax %u", *eax);
-			printk("ebx %u", *ebx);
-			printk("ecx %u", *ecx);
-			printk("edx %u", *edx);
 			query_exits(eax, ebx, ecx, edx);
-			printk("eax %u", *eax);
-			printk("ebx %u", *ebx);
-			printk("ecx %u", *ecx);
-			printk("edx %u", *edx);
-			halt_exit_buffer = (u32)atomic_read(&halt_exits);
-			printk("halt_exits: %u", halt_exit_buffer);
+			assignment04_dmesg();			
 			return exact;
 		}
 

@@ -6128,6 +6128,8 @@ void cmpe283_increase_exits(u32 exit_reason) {
                 case EXIT_REASON_MONITOR_INSTRUCTION:
                     	atomic_add(1, &monitor_ins_exits);
                     	break;     
+		case EXIT_REASON_INVEPT:
+			atomic_add(1, &invept_exits);
                 case EXIT_REASON_INVVPID:
                     	atomic_add(1, &invvpid_exits);
                     	break;
